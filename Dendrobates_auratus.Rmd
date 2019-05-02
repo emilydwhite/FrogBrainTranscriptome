@@ -1,0 +1,107 @@
+---
+title: "Dendrobates auratus"
+output:
+  html_document:
+    df_print: paged
+runtime: shiny
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+library("sleuth")
+```
+
+```{r}
+sample_id <- dir(file.path("C:/Users/emmid/Desktop/DaKallisto/results"))
+sample_id
+```
+
+```{r}
+kal_dirs <- file.path("C:/Users/emmid/Desktop", "DaKallisto", "results", sample_id)
+kal_dirs
+```
+
+```{r}
+s2c <- read.table(file.path("C:/Users/emmid/Desktop", "DaSamples.txt"), header = TRUE, stringsAsFactors=FALSE)
+s2c <- dplyr::select(s2c, sample = Sample, Sex)
+s2c <- dplyr::mutate(s2c, path = kal_dirs)
+s2c
+```
+
+```{r}
+so <- sleuth_prep(s2c, extra_bootstrap_summary = TRUE)
+```
+
+```{r}
+so <- sleuth_fit(so, ~Sex, 'full')
+```
+
+
+```{r}
+so <- sleuth_fit(so, ~1, 'reduced')
+```
+
+```{r}
+so <- sleuth_lrt(so, 'reduced', 'full')
+```
+
+```{r}
+models(so)
+```
+
+```{r}
+sleuth_table <- sleuth_results(so, 'reduced:full', 'lrt', show_all = FALSE)
+sleuth_significant <- dplyr::filter(sleuth_table, qval <= 0.05)
+head(sleuth_significant, 20)
+```
+
+```{r}
+plot_bootstrap(so, "TRINITY_DN50505_c3_g1_i9", units = "est_counts", color_by = "Sex")
+```
+
+```{r}
+plot_bootstrap(so, "TRINITY_DN53575_c2_g1_i5", units = "est_counts", color_by = "Sex")
+```
+
+
+```{r}
+plot_pca(so, color_by = 'Sex')
+```
+
+```{r}
+plot_group_density(so, use_filtered = TRUE, units = "est_counts",
+  trans = "log", grouping = setdiff(colnames(so$sample_to_covariates),
+  "sample"), offset = 1)
+```
+
+
+```{r}
+sleuth_live(so)
+```
+
+```{r}
+plot_transcript_heatmap(so, sleuth_significant$target_id, units = "tpm", trans="log",offset = 1,
+  cluster_transcripts = FALSE, color_high = "#FF2525", color_low = "#FFF525", x_axis_angle = 50, show_rownames=FALSE)
+```
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,120 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+source("http://bioconductor.org/biocLite.R")
+biocLite("devtools")    # only if devtools not yet installed
+biocLite("pachterlab/sleuth")
+```
+
+```{r}
+library("sleuth")
+```
+
+
+```{r}
+sample_id1 <- dir(file.path("C:/Users/emmid/Desktop/RiKallisto/results"))
+sample_id1
+```
+
+```{r}
+kal_dirs1 <- file.path("C:/Users/emmid/Desktop", "RiKallisto", "results", sample_id1)
+kal_dirs1
+```
+
+```{r}
+s2c1 <- read.table(file.path("C:/Users/emmid/Desktop", "RiSamples.txt"), header = TRUE, stringsAsFactors=FALSE)
+s2c1 <- dplyr::select(s2c1, sample = Sample, Sex)
+s2c1 <- dplyr::mutate(s2c1, path = kal_dirs1)
+s2c1
+```
+
+```{r}
+so1 <- sleuth_prep(s2c1, extra_bootstrap_summary = TRUE)
+```
+
+```{r}
+so1 <- sleuth_fit(so1, ~Sex, 'full')
+```
+
+```{r}
+so1 <- sleuth_fit(so1, ~1, 'reduced')
+```
+
+```{r}
+so1 <- sleuth_lrt(so1, 'reduced', 'full')
+```
+
+```{r}
+models(so1)
+```
+
+```{r}
+sleuth_table1 <- sleuth_results(so1, 'reduced:full', 'lrt', show_all = FALSE)
+sleuth_significant1 <- dplyr::filter(sleuth_table1, qval <= 0.05)
+head(sleuth_significant1, 20)
+```
+
+```{r}
+plot_bootstrap(so1, "TRINITY_DN28029_c1_g2_i3", units = "est_counts", color_by = "Sex")
+```
+
+```{r}
+plot_bootstrap(so1, "TRINITY_DN28088_c0_g7_i1", units = "est_counts", color_by = "Sex")
+```
+
+
+```{r}
+source("http://bioconductor.org/biocLite.R")
+biocLite("biomaRt")
+```
+
+
+
+```{r}
+plot_pca(so1, color_by = 'Sex')
+```
+
+```{r}
+plot_group_density(so1, use_filtered = TRUE, units = "est_counts",
+  trans = "log", grouping = setdiff(colnames(so1$sample_to_covariates),
+  "sample"), offset = 1)
+```
+
+```{r}
+sleuth_live(so1)
+```
+```{r}
+plot_transcript_heatmap(so1, sleuth_significant1$target_id, units = "tpm", trans="log",offset = 1,
+  cluster_transcripts = FALSE, color_high = "#FF2525", color_low = "#FFF525", x_axis_angle = 50, show_rownames=FALSE)
+```
+
+```{r}
+sleuth_significant1
+```
+
+
+
+
